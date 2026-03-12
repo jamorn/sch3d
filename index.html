@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="#"><!-- fix favicon.ico -->
+    <title>3D IRPC Shift Schedule</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Kanit', sans-serif; background: #111122; }
+        canvas { display: block; touch-action: none; }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 16px;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            max-width: min(620px, calc(100vw - 40px));
+            line-height: 1.4;
+            box-sizing: border-box;
+        }
+        #month-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(30,30,50,0.9);
+            color: #ffaa33;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 24px;
+            font-weight: bold;
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+            border: 1px solid #ffaa33;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 100;
+            max-width: calc(100vw - 40px);
+            box-sizing: border-box;
+        }
+        #jump-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+            border: 1px solid #ffaa33;
+            z-index: 200;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-family: 'Kanit', sans-serif;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            flex-wrap: wrap;
+            max-width: calc(100vw - 40px);
+            box-sizing: border-box;
+        }
+        #jump-controls input, #jump-controls select {
+            padding: 6px;
+            border-radius: 20px;
+            border: none;
+            text-align: center;
+            font-family: 'Kanit', sans-serif;
+            font-size: 14px;
+            background: white;
+            color: black;
+            min-height: 36px;
+            box-sizing: border-box;
+        }
+        #jump-controls button {
+            border: none;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Kanit', sans-serif;
+            transition: all 0.2s;
+            min-height: 36px;
+        }
+        #jump-btn { background: #ffaa33; color: black; }
+        #jump-btn:hover { background: #ffc107; }
+        #home-btn { background: #444; color: white; }
+        #home-btn:hover { background: #666; }
+        .jump-icon {
+            color: #ffaa33;
+            font-weight: bold;
+            font-size: 20px;
+            line-height: 1;
+        }
+        .month-picker {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .month-picker select { width: 70px; }
+        .month-picker input[type=number] { width: 80px; }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        @media (max-width: 1024px) {
+            #info {
+                top: 12px;
+                left: 12px;
+                max-width: calc(100vw - 160px);
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+            #month-badge {
+                top: 12px;
+                right: 12px;
+                font-size: 18px;
+                padding: 10px 16px;
+            }
+            #jump-controls {
+                left: 12px;
+                bottom: 12px;
+                max-width: calc(100vw - 24px);
+                padding: 10px 16px;
+                border-radius: 26px;
+            }
+        }
+        @media (max-width: 768px), (pointer: coarse) {
+            #info {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+                font-size: 12px;
+                padding: 8px 10px;
+                border-radius: 14px;
+            }
+            #month-badge {
+                top: auto;
+                bottom: 114px;
+                right: 10px;
+                font-size: 16px;
+                padding: 8px 14px;
+                border-radius: 20px;
+            }
+            #jump-controls {
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+                max-width: none;
+                padding: 10px;
+                gap: 8px;
+                border-radius: 18px;
+                justify-content: center;
+            }
+            #jump-controls label {
+                font-size: 12px;
+            }
+            #jump-controls input, #jump-controls select, #jump-controls button {
+                min-height: 40px;
+                font-size: 13px;
+            }
+            .month-picker {
+                width: 100%;
+                justify-content: center;
+            }
+            .month-picker select,
+            .month-picker input[type=number],
+            #jump-day {
+                flex: 1 1 0;
+                min-width: 0;
+            }
+        }
+        @media (max-width: 480px) {
+            #month-badge {
+                left: 10px;
+                right: auto;
+                bottom: 138px;
+            }
+            #jump-controls {
+                gap: 6px;
+            }
+            #jump-controls button {
+                flex: 1 1 calc(50% - 6px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">📅 วันที่ปัจจุบัน (12) สีทอง | M:เช้า(เหลือง), E:บ่าย(ส้ม), N:ดึก(น้ำเงิน), O:หยุด(เทา)</div>
+    <div id="month-badge">มีนาคม 2026</div>
+    
+    <div id="jump-controls">
+        <span class="jump-icon">🚀</span>
+        <div class="month-picker">
+            <label for="jump-month" class="sr-only">เลือกเดือน</label>
+            <select id="jump-month" title="เลือกเดือน" aria-label="เลือกเดือน">
+                <option value="0">ม.ค.</option><option value="1">ก.พ.</option><option value="2" selected>มี.ค.</option>
+                <option value="3">เม.ย.</option><option value="4">พ.ค.</option><option value="5">มิ.ย.</option>
+                <option value="6">ก.ค.</option><option value="7">ส.ค.</option><option value="8">ก.ย.</option>
+                <option value="9">ต.ค.</option><option value="10">พ.ย.</option><option value="11">ธ.ค.</option>
+            </select>
+            <label for="jump-year" class="sr-only">เลือกปี</label>
+            <input type="number" id="jump-year" value="2026" min="2020" max="2030" step="1" title="เลือกปี" aria-label="เลือกปี" placeholder="ปี">
+        </div>
+        <label for="jump-day">วันที่:</label>
+        <input type="number" id="jump-day" min="1" max="31" value="12" title="เลือกวันที่" aria-label="เลือกวันที่">
+        <button id="jump-btn">JUMP</button>
+        <button id="home-btn">HOME</button>
+    </div>
+    <script type="module">
+        import * as THREE from 'https://esm.sh/three@0.128.0/es2022/three.mjs';
+        import { OrbitControls } from 'https://esm.sh/three@0.128.0/es2022/examples/jsm/controls/OrbitControls.mjs';
+        import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
+
+        // ---------- ข้อมูลกะจากระบบจริง ----------
+        const SHIFT_CYCLE = ['M','M','E','E','N','N','O','O'];
+        const TEAMS = [
+            { id: 'A', name: 'กะ A', offset: 3 },
+            { id: 'B', name: 'กะ B', offset: 5 },
+            { id: 'C', name: 'กะ C', offset: 7 },
+            { id: 'D', name: 'กะ D', offset: 1 }
+        ];
+        const baseDate = new Date(2026, 0, 1); // 1 มกราคม 2026 (คงที่ตามระบบ)
+
+        // ฟังก์ชันคำนวณกะตามจริง
+        function getShift(teamOffset, targetDate) {
+            const d1 = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+            const d2 = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+            const diffDays = Math.round((d2 - d1) / (1000*60*60*24));
+            let idx = (diffDays + teamOffset) % 8;
+            return SHIFT_CYCLE[idx < 0 ? idx + 8 : idx];
+        }
+
+        function getDeviceProfile() {
+            const width = window.innerWidth;
+            const hasTouchPoints = navigator.maxTouchPoints > 0;
+            const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+            const hasHover = window.matchMedia('(hover: hover)').matches;
+            const isIPad = /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && hasTouchPoints);
+            const isMobile = width <= 768;
+            const isTablet = !isMobile && (isIPad || (width <= 1180 && coarsePointer));
+            const isTouchDevice = hasTouchPoints || coarsePointer || isIPad || 'ontouchstart' in window;
+
+            return {
+                isMobile,
+                isTablet,
+                isTouchDevice,
+                hasHover: hasHover && !coarsePointer,
+                isCompactLayout: isMobile || isTablet,
+            };
+        }
+
+        function getDeviceCategory(profile) {
+            if (profile.isMobile) return 'mobile';
+            if (profile.isTablet) return 'tablet';
+            return 'desktop';
+        }
+
+        let deviceProfile = getDeviceProfile();
+
+        // ---------- ตั้งค่า Scene, Camera, Renderer ----------
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x111122);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 20, 25);
+        camera.lookAt(0,0,0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        document.body.appendChild(renderer.domElement);
+        renderer.domElement.style.touchAction = 'none';
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.screenSpacePanning = true;
+        controls.enablePan = true;
+        controls.enableZoom = true;
+        controls.zoomSpeed = 1.1;
+        controls.rotateSpeed = 1.0;
+        controls.panSpeed = 0.9;
+        controls.minDistance = 6;
+        controls.maxDistance = 60;
+        controls.maxPolarAngle = Math.PI/3;
+        controls.target.set(0,0,0);
+        controls.update();
+        renderer.domElement.style.cursor = 'grab';
+
+        // แสง
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff,1);
+        dirLight.position.set(5,20,10);
+        dirLight.castShadow = true;
+        dirLight.receiveShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        const d = 30;
+        dirLight.shadow.camera.left = -d; dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d; dirLight.shadow.camera.bottom = -d;
+        dirLight.shadow.camera.near = 1; dirLight.shadow.camera.far = 50;
+        scene.add(dirLight);
+        const backLight = new THREE.PointLight(0x4466cc,0.5);
+        backLight.position.set(-5,10,-10);
+        scene.add(backLight);
+
+        // พื้น
+        const groundGeometry = new THREE.PlaneGeometry(100,100);
+        const groundMaterial = new THREE.MeshStandardMaterial({ color:0x2a2a3a, roughness:0.8, metalness:0.2 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI/2;
+        ground.position.y = -0.3;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        const gridHelper = new THREE.GridHelper(80,40,0xaaaaaa,0x444466);
+        gridHelper.position.y = -0.25;
+        scene.add(gridHelper);
+
+        // ---------- กลุ่มวัตถุ ----------
+        const calendarGroup = new THREE.Group();   // กล่องแต่ละวัน
+        const labelsGroup = new THREE.Group();     // ป้ายชื่อทีม (เส้น + วงกลม)
+        scene.add(calendarGroup);
+        scene.add(labelsGroup);
+
+        // ---------- ตัวแปรสถานะ ----------
+        // ใช้วันที่ปัจจุบัน (ระบบ) เป็นค่าเริ่มต้น
+        const today = new Date();
+        let currentMonth = today.getMonth();      // เดือนปัจจุบัน (0-11)
+        let currentYear = today.getFullYear();
+        let currentDay = today.getDate();          // วันที่ปัจจุบัน
+        let currentDaysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+        let currentStartX = 0;
+        let currentArrow = null;
+        let character = null;
+
+        // ขนาดคงที่
+        const boxWidth = 2.0, boxDepth = 2.0, boxHeight = 0.5, gapX = 0.4, gapZ = 0.4;
+        const dayBoxes = [];
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        let hoveredBox = null;
+        let isOrbiting = false;
+        let touchStartPoint = null;
+        let touchMoved = false;
+        const characterBaseY = -0.22;
+        const characterGuiState = { z: 0 };
+        let characterZController = null;
+        let currentDeviceCategory = getDeviceCategory(deviceProfile);
+
+        // ชื่อเดือนภาษาไทย
+        const monthNames = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
+                            "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+
+        function setHoveredBox(box) {
+            if (hoveredBox === box) return;
+
+            if (hoveredBox) {
+                hoveredBox.material.emissive.setHex(hoveredBox.userData.baseEmissive);
+            }
+
+            hoveredBox = box;
+
+            if (hoveredBox) {
+                hoveredBox.material.emissive.setHex(0x224466);
+            }
+
+            if (!isOrbiting && deviceProfile.hasHover) {
+                renderer.domElement.style.cursor = hoveredBox ? 'pointer' : 'grab';
+            }
+        }
+
+        function pickHoveredBox(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+
+            const intersections = raycaster.intersectObjects(dayBoxes, false);
+            setHoveredBox(intersections.length ? intersections[0].object : null);
+        }
+
+        function focusOnBox(box) {
+            if (!box) return;
+
+            const focusPoint = box.position.clone();
+            const cameraOffset = camera.position.clone().sub(controls.target);
+
+            camera.position.copy(focusPoint.clone().add(cameraOffset));
+            controls.target.copy(focusPoint);
+            controls.update();
+        }
+
+        const dayCameraOffset = new THREE.Vector3(0, 10, 13);
+        const gui = new GUI({ title: 'Character Position' });
+        gui.domElement.style.position = 'absolute';
+        gui.domElement.style.top = '90px';
+        gui.domElement.style.right = '20px';
+        gui.domElement.style.zIndex = '300';
+
+        function focusCameraOnDay(day) {
+            if (day < 1 || day > currentDaysInMonth) return;
+
+            const targetX = currentStartX + (day-1)*(boxWidth+gapX);
+            const focusPoint = new THREE.Vector3(targetX, boxHeight / 2, 0);
+
+            camera.position.copy(focusPoint.clone().add(dayCameraOffset));
+            controls.target.copy(focusPoint);
+            controls.update();
+        }
+
+        function applyDeviceProfile(options = {}) {
+            const { refocus = false } = options;
+            const previousCategory = currentDeviceCategory;
+
+            deviceProfile = getDeviceProfile();
+            currentDeviceCategory = getDeviceCategory(deviceProfile);
+
+            document.body.classList.toggle('device-mobile', deviceProfile.isMobile);
+            document.body.classList.toggle('device-tablet', deviceProfile.isTablet);
+            document.body.classList.toggle('device-desktop', !deviceProfile.isCompactLayout);
+            document.body.classList.toggle('touch-device', deviceProfile.isTouchDevice);
+
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, deviceProfile.isMobile ? 1.35 : deviceProfile.isTablet ? 1.6 : 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = !deviceProfile.isMobile;
+
+            dirLight.castShadow = !deviceProfile.isMobile;
+            dirLight.shadow.mapSize.width = deviceProfile.isMobile ? 512 : deviceProfile.isTablet ? 768 : 1024;
+            dirLight.shadow.mapSize.height = deviceProfile.isMobile ? 512 : deviceProfile.isTablet ? 768 : 1024;
+            if (dirLight.shadow.map) dirLight.shadow.map.dispose();
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.fov = deviceProfile.isMobile ? 56 : deviceProfile.isTablet ? 50 : 45;
+            camera.updateProjectionMatrix();
+
+            controls.enablePan = !deviceProfile.isMobile;
+            controls.zoomSpeed = deviceProfile.isMobile ? 0.85 : deviceProfile.isTablet ? 0.95 : 1.1;
+            controls.rotateSpeed = deviceProfile.isMobile ? 0.72 : deviceProfile.isTablet ? 0.82 : 1.0;
+            controls.panSpeed = deviceProfile.isMobile ? 0.7 : deviceProfile.isTablet ? 0.8 : 0.9;
+            controls.minDistance = deviceProfile.isMobile ? 8.5 : deviceProfile.isTablet ? 7.5 : 6;
+            controls.maxDistance = deviceProfile.isMobile ? 72 : deviceProfile.isTablet ? 64 : 60;
+            dayCameraOffset.set(0, deviceProfile.isMobile ? 12 : deviceProfile.isTablet ? 11 : 10, deviceProfile.isMobile ? 18 : deviceProfile.isTablet ? 15.5 : 13);
+
+            gui.domElement.style.display = deviceProfile.isCompactLayout ? 'none' : '';
+            renderer.domElement.style.cursor = deviceProfile.hasHover ? (hoveredBox ? 'pointer' : 'grab') : 'default';
+
+            updateInfoText();
+
+            if (refocus || previousCategory !== currentDeviceCategory) {
+                focusCameraOnDay(currentDay);
+            }
+        }
+
+        function updateCharacterPosition(day = currentDay) {
+            if (!character || day < 1 || day > currentDaysInMonth) return;
+
+            const targetX = currentStartX + (day-1)*(boxWidth+gapX);
+            character.position.set(targetX, characterBaseY, characterGuiState.z);
+        }
+
+        // ---------- ฟังก์ชันอัปเดตข้อความ info ตามวันที่ปัจจุบัน (dynamic) ----------
+        function updateInfoText() {
+            const today = new Date();
+            const day = today.getDate();
+            const legend = deviceProfile.isCompactLayout
+                ? 'M:เช้า E:บ่าย N:ดึก O:หยุด'
+                : 'M:เช้า(เหลือง), E:บ่าย(ส้ม), N:ดึก(น้ำเงิน), O:หยุด(เทา)';
+            document.getElementById('info').innerHTML =
+                `${deviceProfile.isCompactLayout ? '📅 วันนี้' : '📅 วันที่ปัจจุบัน'} (${day}) สีทอง | ${legend}`;
+        }
+        updateInfoText();
+
+        // ---------- ฟังก์ชันสร้าง Canvas Texture สำหรับบนกล่อง ----------
+        function createTopTexture(day, shift) {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#f0f0f0';
+            ctx.beginPath();
+            ctx.roundRect(10,10,canvas.width-20,canvas.height-20,30);
+            ctx.fill();
+            ctx.strokeStyle = '#aaa';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            let shiftColor;
+            switch(shift) {
+                case 'M': shiftColor = '#b45309'; break;
+                case 'E': shiftColor = '#c2410c'; break;
+                case 'N': shiftColor = '#1e3a8a'; break;
+                case 'O': shiftColor = '#4b5563'; break;
+                default: shiftColor = '#000';
+            }
+            ctx.font = 'bold 90px "Kanit", "Arial", sans-serif';
+            ctx.fillStyle = shiftColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(day, 128, 110);
+            ctx.font = 'bold 100px "Kanit", "Arial", sans-serif';
+            ctx.fillText(shift, 128, 190);
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = ctx.shadowOffsetY = 2;
+
+            return new THREE.CanvasTexture(canvas);
+        }
+        CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+            if (w<2*r) r=w/2; if (h<2*r) r=h/2;
+            this.moveTo(x+r,y); this.lineTo(x+w-r,y);
+            this.quadraticCurveTo(x+w,y,x+w,y+r);
+            this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+            this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r);
+            this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y);
+            return this;
+        };
+
+        // ---------- สร้างกล่องตามเดือน ----------
+        function rebuildCalendar(month, year) {
+            setHoveredBox(null);
+            dayBoxes.length = 0;
+            while(calendarGroup.children.length) calendarGroup.remove(calendarGroup.children[0]);
+
+            const daysInMonth = new Date(year, month+1, 0).getDate();
+            const totalWidth = daysInMonth * (boxWidth + gapX) - gapX;
+            const startX = -totalWidth/2 + boxWidth/2;
+
+            currentDaysInMonth = daysInMonth;
+            currentStartX = startX;
+
+            // วันที่ปัจจุบัน (สำหรับเน้นทอง)
+            const today = new Date();
+            const todayYear = today.getFullYear();
+            const todayMonth = today.getMonth();
+            const todayDay = today.getDate();
+
+            for (let t=0; t<TEAMS.length; t++) {
+                const team = TEAMS[t];
+                for (let d=1; d<=daysInMonth; d++) {
+                    const targetDate = new Date(year, month, d);
+                    const shiftChar = getShift(team.offset, targetDate);
+                    const posX = startX + (d-1)*(boxWidth+gapX);
+                    const posZ = t*(boxDepth+gapZ) - (TEAMS.length*(boxDepth+gapZ))/2 + boxDepth/2;
+                    const posY = boxHeight/2;
+
+                    // เน้นสีทองเฉพาะวันนี้ (ถ้าตรงกับเดือน/ปีที่แสดง)
+                    const isCurrent = (year === todayYear && month === todayMonth && d === todayDay);
+                    const boxColor = isCurrent ? 0xffaa33 : 0xc0c0c0;
+
+                    const boxMat = new THREE.MeshStandardMaterial({ color:boxColor, roughness:0.4, metalness:0.3, emissive: isCurrent ? 0x442200 : 0 });
+                    const boxGeo = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+                    const box = new THREE.Mesh(boxGeo, boxMat);
+                    box.castShadow = box.receiveShadow = true;
+                    box.position.set(posX, posY, posZ);
+                    box.userData = { day:d, shift:shiftChar, team:team.id, baseEmissive: isCurrent ? 0x442200 : 0x000000 };
+                    calendarGroup.add(box);
+                    dayBoxes.push(box);
+
+                    const topTex = createTopTexture(d, shiftChar);
+                    const topMat = new THREE.MeshStandardMaterial({ map:topTex, side:THREE.DoubleSide, emissive:0, roughness:0.3, metalness:0.1 });
+                    const topPlane = new THREE.Mesh(new THREE.PlaneGeometry(boxWidth*0.9, boxDepth*0.9), topMat);
+                    topPlane.rotation.x = -Math.PI/2;
+                    topPlane.position.set(posX, boxHeight+0.01, posZ);
+                    topPlane.receiveShadow = topPlane.castShadow = false;
+                    calendarGroup.add(topPlane);
+                }
+            }
+            // อัปเดต month-badge
+            document.getElementById('month-badge').innerText = 
+                new Date(year, month, 1).toLocaleDateString('th-TH', { month:'long', year:'numeric' });
+        }
+
+        // ---------- สร้างป้ายชื่อทีม (เส้นทึบสีขาว) สำหรับ target day ----------
+        function createTeamLabel(teamName, targetPos, offset) {
+            const group = new THREE.Group();
+            const labelPos = targetPos.clone().add(offset);
+
+            // เส้นทึบสีขาว
+            const points = [targetPos, labelPos];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+            const line = new THREE.Line(geometry, material);
+            group.add(line);
+
+            // วงกลมชื่อทีม
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.beginPath();
+            ctx.arc(64,64,50,0,2*Math.PI);
+            ctx.fillStyle = '#00cc88';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 70px "Kanit", "Arial", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(teamName, 64, 64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map:texture, depthTest:false, transparent:true });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.position.copy(labelPos);
+            sprite.scale.set(1.2,1.2,0.2);
+            group.add(sprite);
+            return group;
+        }
+
+        // อัปเดตป้ายชื่อทีมตาม target day
+        function updateTeamLabels(targetDay) {
+            while(labelsGroup.children.length) labelsGroup.remove(labelsGroup.children[0]);
+            if (targetDay<1 || targetDay>currentDaysInMonth) return;
+
+            const targetX = currentStartX + (targetDay-1)*(boxWidth+gapX);
+            for (let t=0; t<TEAMS.length; t++) {
+                const teamName = TEAMS[t].id;
+                const targetPos = new THREE.Vector3(targetX, boxHeight/2,
+                    t*(boxDepth+gapZ) - (TEAMS.length*(boxDepth+gapZ))/2 + boxDepth/2);
+                const offset = new THREE.Vector3(-2.8, 2.0 + t*0.3, 0);
+                labelsGroup.add(createTeamLabel(teamName, targetPos, offset));
+            }
+        }
+
+        // ---------- ลูกศรแดง ----------
+        function createArrow(targetX, targetZ=0, heightY=0.5) {
+            const group = new THREE.Group();
+            const cylGeo = new THREE.CylinderGeometry(0.1,0.1,2.5);
+            const cylMat = new THREE.MeshStandardMaterial({ color:0xff3333, emissive:0x330000 });
+            const cyl = new THREE.Mesh(cylGeo, cylMat);
+            cyl.position.y = 1.25;
+            cyl.castShadow = cyl.receiveShadow = true;
+            group.add(cyl);
+
+            const coneGeo = new THREE.ConeGeometry(0.4,1.0);
+            const coneMat = new THREE.MeshStandardMaterial({ color:0xff0000, emissive:0x330000 });
+            const cone = new THREE.Mesh(coneGeo, coneMat);
+            cone.position.y = 2.5+0.5;
+            cone.castShadow = cone.receiveShadow = true;
+            group.add(cone);
+
+            group.position.set(targetX, heightY+2.0, targetZ);
+            return group;
+        }
+
+        function updateArrow(targetDay) {
+            if (currentArrow) scene.remove(currentArrow);
+            if (targetDay<1 || targetDay>currentDaysInMonth) return;
+            const targetX = currentStartX + (targetDay-1)*(boxWidth+gapX);
+            currentArrow = createArrow(targetX, 0, 0.5);
+            scene.add(currentArrow);
+        }
+
+        // ---------- ตัวละครสไตล์ Minecraft (เสื้อน้ำเงิน) ----------
+        function createCharacter() {
+            const group = new THREE.Group();
+            const skin = 0xffcc99, shirt = 0x3366ff, pants = 0x2244aa, hair = 0x221c0f, black = 0x000000, mouth = 0xff6666, shoe = 0x111111, sole = 0xe5e7eb;
+
+            // ลำตัว
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8,0.9,0.4), new THREE.MeshStandardMaterial({ color:shirt }));
+            torso.position.set(0,1.0,0); torso.castShadow = torso.receiveShadow = true; group.add(torso);
+            // หัว
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.6,0.4), new THREE.MeshStandardMaterial({ color:skin }));
+            head.position.set(0,1.75,0); head.castShadow = head.receiveShadow = true; group.add(head);
+            // ผม
+            const hairMesh = new THREE.Mesh(new THREE.BoxGeometry(0.65,0.15,0.45), new THREE.MeshStandardMaterial({ color:hair }));
+            hairMesh.position.set(0,2.08,0); hairMesh.castShadow = hairMesh.receiveShadow = true; group.add(hairMesh);
+            // ตา
+            const eyeGeo = new THREE.BoxGeometry(0.1,0.1,0.1);
+            const eyeMat = new THREE.MeshStandardMaterial({ color:black });
+            const leye = new THREE.Mesh(eyeGeo, eyeMat); leye.position.set(-0.15,1.85,0.21); group.add(leye);
+            const reye = new THREE.Mesh(eyeGeo, eyeMat); reye.position.set(0.15,1.85,0.21); group.add(reye);
+            // ปาก
+            const mouthMesh = new THREE.Mesh(new THREE.BoxGeometry(0.25,0.05,0.1), new THREE.MeshStandardMaterial({ color:mouth }));
+            mouthMesh.position.set(0,1.67,0.21); group.add(mouthMesh);
+            // แขน
+            const armGeo = new THREE.BoxGeometry(0.25,1.0,0.25);
+            const armMat = new THREE.MeshStandardMaterial({ color:shirt });
+            const lArm = new THREE.Mesh(armGeo, armMat); lArm.position.set(-0.55,0.93,0); lArm.castShadow = lArm.receiveShadow = true; group.add(lArm);
+            const rArm = new THREE.Mesh(armGeo, armMat); rArm.position.set(0.55,0.93,0); rArm.castShadow = rArm.receiveShadow = true; group.add(rArm);
+            // ขา
+            const legGeo = new THREE.BoxGeometry(0.28,1.04,0.28);
+            const legMat = new THREE.MeshStandardMaterial({ color:pants });
+            const lLeg = new THREE.Mesh(legGeo, legMat); lLeg.position.set(-0.25,0.68,0); lLeg.castShadow = lLeg.receiveShadow = true; group.add(lLeg);
+            const rLeg = new THREE.Mesh(legGeo, legMat); rLeg.position.set(0.25,0.68,0); rLeg.castShadow = rLeg.receiveShadow = true; group.add(rLeg);
+
+            const shoeGeo = new THREE.BoxGeometry(0.34,0.16,0.48);
+            const shoeMat = new THREE.MeshStandardMaterial({ color:shoe, roughness:0.7, metalness:0.1 });
+            const soleGeo = new THREE.BoxGeometry(0.34,0.04,0.48);
+            const soleMat = new THREE.MeshStandardMaterial({ color:sole, roughness:0.9, metalness:0.05 });
+
+            const lShoe = new THREE.Mesh(shoeGeo, shoeMat); lShoe.position.set(-0.25,0.08,0.05); lShoe.castShadow = lShoe.receiveShadow = true; group.add(lShoe);
+            const rShoe = new THREE.Mesh(shoeGeo, shoeMat); rShoe.position.set(0.25,0.08,0.05); rShoe.castShadow = rShoe.receiveShadow = true; group.add(rShoe);
+            const lSole = new THREE.Mesh(soleGeo, soleMat); lSole.position.set(-0.25,0.0,0.05); lSole.castShadow = lSole.receiveShadow = true; group.add(lSole);
+            const rSole = new THREE.Mesh(soleGeo, soleMat); rSole.position.set(0.25,0.0,0.05); rSole.castShadow = rSole.receiveShadow = true; group.add(rSole);
+
+            return group;
+        }
+
+        // ---------- เริ่มต้นด้วยเดือน/ปีปัจจุบัน ----------
+        rebuildCalendar(currentMonth, currentYear);
+        updateTeamLabels(currentDay);
+        updateArrow(currentDay);
+
+        character = createCharacter();
+        // วางตัวละครไว้ที่แถว A (index 0) และห่างไปด้านหน้า (แกน Z) เล็กน้อย
+        const defaultCharacterZ = -5.25;
+        characterGuiState.z = defaultCharacterZ;
+        updateCharacterPosition(currentDay);
+        scene.add(character);
+        focusCameraOnDay(currentDay);
+
+        characterZController = gui.add(characterGuiState, 'z', -10, 10, 0.05)
+            .name('Character Z')
+            .listen()
+            .onChange(() => {
+                updateCharacterPosition(currentDay);
+            });
+
+        gui.add({ resetZ: () => {
+            characterGuiState.z = defaultCharacterZ;
+            characterZController.updateDisplay();
+            updateCharacterPosition(currentDay);
+        } }, 'resetZ').name('Reset Z');
+
+        applyDeviceProfile({ refocus: true });
+
+        // ---------- Event Listeners สำหรับ JUMP / HOME ----------
+        const jumpBtn = document.getElementById('jump-btn');
+        const homeBtn = document.getElementById('home-btn');
+        const jumpDayInput = document.getElementById('jump-day');
+        const jumpMonthSelect = document.getElementById('jump-month');
+        const jumpYearInput = document.getElementById('jump-year');
+
+        jumpBtn.addEventListener('click', () => {
+            const day = parseInt(jumpDayInput.value);
+            const month = parseInt(jumpMonthSelect.value);
+            const year = parseInt(jumpYearInput.value);
+            const dim = new Date(year, month+1, 0).getDate();
+            if (isNaN(day) || day<1 || day>dim) { alert(`วันที่ 1-${dim}`); return; }
+
+            if (month !== currentMonth || year !== currentYear) {
+                rebuildCalendar(month, year);
+                currentMonth = month; currentYear = year;
+            }
+            currentDay = day;
+            updateTeamLabels(day);
+            updateArrow(day);
+
+            // ขยับตัวละครไปยังวันที่เลือก (แถว A)
+            updateCharacterPosition(day);
+
+            focusCameraOnDay(day);
+
+            jumpDayInput.style.backgroundColor = '#ffaa33';
+            setTimeout(() => jumpDayInput.style.backgroundColor = '', 200);
+        });
+
+        homeBtn.addEventListener('click', () => {
+            const today = new Date();
+            const homeMonth = today.getMonth();
+            const homeYear = today.getFullYear();
+            const homeDay = today.getDate();
+
+            if (homeMonth !== currentMonth || homeYear !== currentYear) {
+                rebuildCalendar(homeMonth, homeYear);
+                currentMonth = homeMonth; currentYear = homeYear;
+            }
+            currentDay = homeDay;
+            updateTeamLabels(homeDay);
+            updateArrow(homeDay);
+            updateCharacterPosition(homeDay);
+
+            focusCameraOnDay(homeDay);
+
+            jumpMonthSelect.value = homeMonth;
+            jumpYearInput.value = homeYear;
+            jumpDayInput.value = homeDay;
+        });
+
+        // ตั้งค่าเริ่มต้นของ select/month/year ให้ตรงกับปัจจุบัน
+        jumpMonthSelect.value = currentMonth;
+        jumpYearInput.value = currentYear;
+        jumpDayInput.value = currentDay;
+
+        controls.addEventListener('start', () => {
+            isOrbiting = true;
+            if (deviceProfile.hasHover) {
+                renderer.domElement.style.cursor = 'grabbing';
+            }
+        });
+
+        controls.addEventListener('end', () => {
+            isOrbiting = false;
+            if (deviceProfile.hasHover) {
+                renderer.domElement.style.cursor = hoveredBox ? 'pointer' : 'grab';
+            }
+        });
+
+        renderer.domElement.addEventListener('pointerdown', (event) => {
+            if (event.pointerType !== 'touch') return;
+            touchStartPoint = { x: event.clientX, y: event.clientY };
+            touchMoved = false;
+        });
+
+        renderer.domElement.addEventListener('pointermove', (event) => {
+            if (event.pointerType === 'touch' && touchStartPoint) {
+                const movedX = Math.abs(event.clientX - touchStartPoint.x);
+                const movedY = Math.abs(event.clientY - touchStartPoint.y);
+                if (movedX > 10 || movedY > 10) touchMoved = true;
+            }
+
+            if (!deviceProfile.hasHover || isOrbiting) return;
+            pickHoveredBox(event);
+        });
+
+        renderer.domElement.addEventListener('pointerleave', () => {
+            if (!deviceProfile.hasHover || isOrbiting) return;
+            setHoveredBox(null);
+        });
+
+        renderer.domElement.addEventListener('pointerup', (event) => {
+            if (!deviceProfile.isTouchDevice || event.pointerType !== 'touch') {
+                touchStartPoint = null;
+                touchMoved = false;
+                return;
+            }
+
+            if (!touchMoved) {
+                pickHoveredBox(event);
+                if (hoveredBox) {
+                    currentDay = hoveredBox.userData.day;
+                    updateTeamLabels(currentDay);
+                    updateArrow(currentDay);
+                    updateCharacterPosition(currentDay);
+                    focusCameraOnDay(currentDay);
+                    jumpDayInput.value = currentDay;
+                }
+                setHoveredBox(null);
+            }
+
+            touchStartPoint = null;
+            touchMoved = false;
+        });
+
+        renderer.domElement.addEventListener('pointercancel', () => {
+            touchStartPoint = null;
+            touchMoved = false;
+            if (!deviceProfile.hasHover) {
+                setHoveredBox(null);
+            }
+        });
+
+        renderer.domElement.addEventListener('wheel', (event) => {
+            if (!deviceProfile.hasHover || isOrbiting) return;
+            pickHoveredBox(event);
+            focusOnBox(hoveredBox);
+        }, { capture: true, passive: true });
+
+        // ---------- Animation ----------
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            const shouldRefocus = deviceProfile.isCompactLayout;
+            applyDeviceProfile({ refocus: shouldRefocus });
+        });
+    </script>
+</body>
+</html>
