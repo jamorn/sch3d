@@ -1,0 +1,13 @@
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Node (ถ้ามี)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Logs / temp
+*.log
