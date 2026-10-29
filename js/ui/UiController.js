@@ -33,14 +33,62 @@ export class UiController {
         this.homeBtn.addEventListener('click', () => {
             this.onHome?.();
         });
+
+        // อัปเดต max ของช่องวันตามเดือน/ปี และ clamp ค่าที่เกิน
+        this.monthSelect.addEventListener('change', () => this._syncDayMax());
+        this.yearInput.addEventListener('input', () => this._syncDayMax());
+        this.yearInput.addEventListener('change', () => this._syncDayMax());
+
+        // บล็อก/clamp ค่าวันที่เกินตอนพิมพ์
+        this.dayInput.addEventListener('input', () => this._clampDay());
+        this.dayInput.addEventListener('change', () => this._clampDay());
+    }
+
+    /**
+     * จำนวนวันสูงสุดของเดือน/ปีที่เลือกอยู่ (จาก input)
+     * @returns {number}
+     */
+    _daysInSelectedMonth() {
+        const month = parseInt(this.monthSelect.value, 10);
+        let year = parseInt(this.yearInput.value, 10);
+        if (Number.isNaN(year)) year = new Date().getFullYear();
+        if (Number.isNaN(month)) return 31;
+        return new Date(year, month + 1, 0).getDate();
+    }
+
+    /**
+     * อัปเดต max attribute ของช่องวัน + clamp ค่าปัจจุบันให้อยู่ในช่วง
+     */
+    _syncDayMax() {
+        const max = this._daysInSelectedMonth();
+        this.dayInput.max = String(max);
+        this._clampDay();
+    }
+
+    /**
+     * clamp ค่าในช่องวันให้อยู่ใน 1..max (กันพิมพ์เกิน)
+     */
+    _clampDay() {
+        const max = parseInt(this.dayInput.max, 10) || this._daysInSelectedMonth();
+        let day = parseInt(this.dayInput.value, 10);
+
+        // ปล่อยว่างไว้ระหว่างพิมพ์ (ให้ผู้ใช้พิมพ์ต่อได้)
+        if (Number.isNaN(day)) return;
+
+        if (day > max) {
+            day = max;
+            this.dayInput.value = String(max);
+        } else if (day < 1) {
+            day = 1;
+            this.dayInput.value = '1';
+        }
     }
 
     _handleJump() {
         // --- sanitize + validate อินพุตอย่างเข้มงวด ---
-        const rawDay = parseInt(this.dayInput.value, 10);
         const rawMonth = parseInt(this.monthSelect.value, 10);
 
-        // ปี: ยอมรับเฉพาะตัวเลข 4 หลัก ในช่วงที่กำหนด (input อาจว่าง/ตัวอักษร)
+        // ปี: ยอมรับเฉพาะตัวเลข ในช่วงที่กำหนด (input อาจว่าง/ตัวอักษร)
         let year = parseInt(this.yearInput.value, 10);
         const minYear = parseInt(this.yearInput.min, 10) || 2020;
         const maxYear = parseInt(this.yearInput.max, 10) || 2100;
@@ -59,18 +107,22 @@ export class UiController {
             return;
         }
 
-        // วัน: ต้องอยู่ในช่วง 1..daysInMonth ของเดือน/ปีนั้นจริง
+        // วัน: clamp ให้อยู่ในช่วง 1..daysInMonth ของเดือน/ปีนั้นจริง
         const daysInMonth = new Date(year, rawMonth + 1, 0).getDate();
-        if (Number.isNaN(rawDay) || rawDay < 1 || rawDay > daysInMonth) {
-            alert(`วันที่ต้องอยู่ระหว่าง 1–${daysInMonth}`);
+        let day = parseInt(this.dayInput.value, 10);
+        if (Number.isNaN(day)) {
+            alert(`กรุณากรอกวันที่ 1–${daysInMonth}`);
             return;
         }
+        if (day > daysInMonth) {
+            day = daysInMonth;
+            this.dayInput.value = String(day);
+        } else if (day < 1) {
+            day = 1;
+            this.dayInput.value = '1';
+        }
 
-        // เขียนค่าที่ sanitize แล้วกลับลง input ให้ตรงกัน
-        this.yearInput.value = year;
-        this.dayInput.value = rawDay;
-
-        this.onJump?.(rawMonth, year, rawDay);
+        this.onJump?.(rawMonth, year, day);
 
         // feedback สี
         this.dayInput.style.backgroundColor = '#ffaa33';
@@ -113,6 +165,8 @@ export class UiController {
         this.dayInput.value = day;
         this.monthSelect.value = month;
         this.yearInput.value = year;
+        // อัปเดต max ของช่องวันตามเดือน/ปีใหม่
+        this._syncDayMax();
     }
 
     /**
