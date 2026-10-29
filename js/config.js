@@ -79,6 +79,16 @@ export const ARROW = {
     bobAmplitude: 0.9,
     // ขนาดลูกศร (scale ทั้ง group)
     scale: 1.8,
+    // ---------- ค่าที่เบาลงบน non-desktop (compact) ----------
+    compact: {
+        // หมุนช้าลง (period ยาวขึ้น)
+        rotatePeriod: 10,
+        // bob ช้าลง + น้อยลง (ไม่ขึ้นสุดลงสุด แค่ให้เห็นว่าขยับ)
+        bobSpeed: 1.0,
+        bobAmplitude: 0.12,
+        // throttle อัปเดตแอนิเมชัน (อัปเดตทุก ~1/30 วินาที)
+        updateInterval: 1 / 30,
+    },
 };
 
 // Y ของ label ชื่อวัน (Mon/Tue) บนหัว humanoid — เท่ากันทุกวัน

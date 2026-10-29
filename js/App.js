@@ -185,8 +185,9 @@ export class App {
         this.monthGui?.setVisible(compact);
         this.dayLabelGui?.setVisible(compact);
 
-        // ซ่อนลูกศรแดงบน non-desktop
-        this.arrow.setEnabled(!compact);
+        // ลูกศรแดงแสดงทุก device — บน compact ใช้โหมดเบา (หมุนช้า + bob น้อย + throttle)
+        this.arrow.setEnabled(true);
+        this.arrow.setCompact(compact);
 
         this.sceneManager.setCursor(
             this.deviceProfile.hasHover ? (this.picker.hoveredBox ? 'pointer' : 'grab') : 'default',
