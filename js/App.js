@@ -204,10 +204,17 @@ export class App {
     }
 
     _startAnimation() {
-        const loop = () => {
+        let lastTime = performance.now();
+        const loop = (now) => {
             requestAnimationFrame(loop);
+
+            // delta time (วินาที) — กันค่าผิดปกติหลังสลับ tab
+            const delta = Math.min((now - lastTime) / 1000, 0.1);
+            lastTime = now;
+
+            this.arrow.animate(delta);
             this.sceneManager.render();
         };
-        loop();
+        requestAnimationFrame(loop);
     }
 }

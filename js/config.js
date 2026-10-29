@@ -65,6 +65,22 @@ export const TEAM_COLORS = {
 export const DEFAULT_CHARACTER_Z = -5.25;
 export const CHARACTER_BASE_Y = -0.22;
 
+// ---------- Red Arrow (ลูกศรแดงด้านหลัง humanoid) ----------
+export const ARROW = {
+    // อยู่ด้านหลัง humanoid (camera อยู่ทาง +Z → ค่าลบกว่าคืออยู่หลัง)
+    offsetZ: -1.8,
+    // ระยะเวลาหมุนรอบตัวเอง 1 รอบ (วินาที)
+    rotatePeriod: 6,
+    // ความเร็วการขยับขึ้นลง (rad/s ของ sine)
+    bobSpeed: 2.0,
+    // Y ฐานของลูกศร (ก่อน bob) — ต่ำลงใกล้พื้น
+    baseY: 0.6,
+    // ระยะขยับขึ้นลง (หน่วย world) — bob ช่วง baseY ± amplitude
+    bobAmplitude: 0.9,
+    // ขนาดลูกศร (scale ทั้ง group)
+    scale: 1.8,
+};
+
 // Y ของ label ชื่อวัน (Mon/Tue) บนหัว humanoid — เท่ากันทุกวัน
 export const DAY_LABEL_Y = 2.6;
 // Z ของ label ชื่อวัน (Mon/Tue) — ปรับได้ด้วย GUI

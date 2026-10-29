@@ -1,8 +1,9 @@
 /**
- * Arrow — ลูกศรแดงชี้วันที่เลือก
+ * Arrow — ลูกศรแดงชี้วันที่เลือก (อยู่ด้านหลัง humanoid)
+ * มีแอนิเมชัน: หมุนรอบตัวเองช้าๆ + ขยับขึ้นลง (bob) ตามแกน Y
  */
 import * as THREE from 'three';
-import { BOX, COLORS } from '../config.js';
+import { BOX, COLORS, DEFAULT_CHARACTER_Z, ARROW } from '../config.js';
 
 export class Arrow {
     /**
@@ -14,6 +15,10 @@ export class Arrow {
         this.calendarGrid = calendarGrid;
         this.current = null;
         this.enabled = true;
+
+        // สถานะแอนิเมชัน
+        this._elapsed = 0;
+        this._baseY = ARROW.baseY;
     }
 
     /**
@@ -37,18 +42,57 @@ export class Arrow {
         const targetX = this.calendarGrid.getXForDate(targetDate);
         if (targetX === null) return;
 
-        this.current = this._create(targetX, 0, BOX.height);
+        // อยู่ด้านหลัง humanoid ตามแนว Z
+        const targetZ = DEFAULT_CHARACTER_Z + ARROW.offsetZ;
+        this.current = this._create(targetX, targetZ);
         this.scene.add(this.current);
+    }
+
+    /**
+     * อัปเดตแอนิเมชัน (หมุน + bob) — เรียกทุกเฟรม
+     * @param {number} delta เวลาเป็นวินาทีที่ผ่านไปในเฟรมนี้
+     */
+    animate(delta) {
+        if (!this.current || !this.enabled) return;
+        this._elapsed += delta;
+
+        // หมุนรอบแกน Y ตามเข็มนาฬิกา (มองจากด้านบน = ทิศลบ)
+        const angularSpeed = (2 * Math.PI) / ARROW.rotatePeriod;
+        this.current.rotation.y -= angularSpeed * delta;
+
+        // ขยับขึ้นลงตาม sine
+        this.current.position.y = this._baseY
+            + Math.sin(this._elapsed * ARROW.bobSpeed) * ARROW.bobAmplitude;
     }
 
     _remove() {
         if (this.current) {
             this.scene.remove(this.current);
+            this._dispose(this.current);
             this.current = null;
         }
     }
 
-    _create(targetX, targetZ = 0, heightY = 0.5) {
+    _dispose(group) {
+        group.traverse((child) => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                mats.forEach((m) => {
+                    if (m.map) m.map.dispose();
+                    m.dispose();
+                });
+            }
+        });
+    }
+
+    /**
+     * สร้างลูกศร (รูปทรงเหมือนเดิม: เสาตั้ง + หัวลูกศรชี้ลงอยู่บน)
+     * เป็น group ที่หมุนได้รอบแกน Y
+     * @param {number} x
+     * @param {number} z
+     */
+    _create(x, z) {
         const group = new THREE.Group();
 
         const cyl = new THREE.Mesh(
@@ -69,7 +113,10 @@ export class Arrow {
         cone.receiveShadow = true;
         group.add(cone);
 
-        group.position.set(targetX, heightY + 2.0, targetZ);
+        // ฐานวาง Y = baseY (ส่วน bob จะปรับ position.y ของ group)
+        group.position.set(x, this._baseY, z);
+        // ขยายขนาดลูกศรทั้ง group
+        group.scale.setScalar(ARROW.scale);
         return group;
     }
 }
