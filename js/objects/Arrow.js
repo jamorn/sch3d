@@ -138,23 +138,83 @@ export class Arrow {
     _create(x, z) {
         const group = new THREE.Group();
 
-        const cyl = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.1, 0.1, 2.5),
-            new THREE.MeshStandardMaterial({ color: COLORS.arrow, emissive: COLORS.arrowEmissive }),
-        );
-        cyl.position.y = 1.25;
-        cyl.castShadow = false;   // ไม่ทำเงา (กันภาระตอน animation)
-        cyl.receiveShadow = false;
-        group.add(cyl);
+        // ---------- เสา 2 สี (ครึ่งละ 50%) ----------
+        const shaftRadius = 0.1;
+        const shaftHeight = 2.5;
 
-        const cone = new THREE.Mesh(
-            new THREE.ConeGeometry(0.4, 1.0),
-            new THREE.MeshStandardMaterial({ color: COLORS.arrowCone, emissive: COLORS.arrowEmissive }),
+        // สี 1 (ครึ่งฝั่ง z+)
+        const shaftA = new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                shaftRadius, shaftRadius, shaftHeight,
+                24, 1, true,
+                0, Math.PI, // thetaStart 0, ครึ่งวง
+            ),
+            new THREE.MeshStandardMaterial({
+                color: COLORS.arrow,
+                emissive: COLORS.arrowEmissive,
+                side: THREE.DoubleSide,
+            }),
         );
-        cone.position.y = 3.0;
-        cone.castShadow = false;
-        cone.receiveShadow = false;
-        group.add(cone);
+        shaftA.position.y = shaftHeight / 2;
+        shaftA.castShadow = false;
+        shaftA.receiveShadow = false;
+        group.add(shaftA);
+
+        // สี 2 (ครึ่งฝั่ง z-) — สลับสี
+        const shaftB = new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                shaftRadius, shaftRadius, shaftHeight,
+                24, 1, true,
+                Math.PI, Math.PI, // thetaStart π, ครึ่งวงตรงข้าม
+            ),
+            new THREE.MeshStandardMaterial({
+                color: ARROW.stripe.color,
+                side: THREE.DoubleSide,
+            }),
+        );
+        shaftB.position.y = shaftHeight / 2;
+        shaftB.castShadow = false;
+        shaftB.receiveShadow = false;
+        group.add(shaftB);
+
+        // ---------- หัวหมวก (cone) 2 สี สลับฝั่งกับเสา 50/50 ----------
+        const coneRadius = 0.4;
+        const coneHeight = 1.0;
+
+        // สี 1 (แดง) ฝั่ง z+ — ตรงข้ามกับเสาที่เป็นเหลืองฝั่ง z+
+        const coneA = new THREE.Mesh(
+            new THREE.ConeGeometry(
+                coneRadius, coneHeight,
+                24, 1, true,
+                0, Math.PI, // thetaStart 0, ครึ่งวง
+            ),
+            new THREE.MeshStandardMaterial({
+                color: COLORS.arrowCone,
+                emissive: COLORS.arrowEmissive,
+                side: THREE.DoubleSide,
+            }),
+        );
+        coneA.position.y = 3.0;
+        coneA.castShadow = false;
+        coneA.receiveShadow = false;
+        group.add(coneA);
+
+        // สี 2 (เหลือง) ฝั่ง z- — ตรงข้ามกับเสาที่เป็นแดงฝั่ง z-
+        const coneB = new THREE.Mesh(
+            new THREE.ConeGeometry(
+                coneRadius, coneHeight,
+                24, 1, true,
+                Math.PI, Math.PI, // thetaStart π, ครึ่งวงตรงข้าม
+            ),
+            new THREE.MeshStandardMaterial({
+                color: ARROW.stripe.color,
+                side: THREE.DoubleSide,
+            }),
+        );
+        coneB.position.y = 3.0;
+        coneB.castShadow = false;
+        coneB.receiveShadow = false;
+        group.add(coneB);
 
         group.position.set(x, this._baseY, z);
         group.scale.setScalar(ARROW.scale);

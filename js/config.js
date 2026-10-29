@@ -79,6 +79,10 @@ export const ARROW = {
     bobAmplitude: 0.9,
     // ขนาดลูกศร (scale ทั้ง group)
     scale: 1.8,
+    // ---------- สีที่ 2 ของเสา/หัวหมวก (สลับครึ่ง 50%) ----------
+    stripe: {
+        color: 0xffe066,   // เหลืองอ่อน
+    },
     // ---------- ค่าที่เบาลงบน non-desktop (compact) ----------
     compact: {
         // หมุนช้าลง (period ยาวขึ้น)
